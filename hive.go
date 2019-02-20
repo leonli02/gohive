@@ -71,6 +71,9 @@ func Connect(host string, port int, configuration *ConnectConfiguration) (conn *
 	} else {
 		socket, err = thrift.NewTSocket(fmt.Sprintf("%s:%d", host, port))
 	}
+	if err != nil {
+		return
+	}
 
 	if err = socket.Open(); err != nil {
 		return
