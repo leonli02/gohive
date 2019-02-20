@@ -13,8 +13,7 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/beltran/gohive/hiveserver"
-	"github.com/beltran/gosasl"
+	"github.com/leonli02/gohive/hiveserver"
 )
 
 const DEFAULT_FETCH_SIZE int64 = 1000
@@ -97,71 +96,11 @@ func Connect(host string, port int, auth string,
 		configuration.Password = "x"
 	}
 
-	if configuration.TransportMode == "http" {
-		if auth == "NONE" {
-			httpClient, protocol, err := getHTTPClient(configuration)
-			if err != nil {
-				return nil, err
-			}
-			httpOptions := thrift.THttpClientOptions{Client: httpClient}
-			transport, err = thrift.NewTHttpClientTransportFactoryWithOptions(fmt.Sprintf(protocol+"://%s:%s@%s:%d/"+configuration.HTTPPath, configuration.Username, configuration.Password, host, port), httpOptions).GetTransport(socket)
-			if err != nil {
-				return nil, err
-			}
-		} else if auth == "KERBEROS" {
-			mechanism, err := gosasl.NewGSSAPIMechanism(configuration.Service)
-			if err != nil {
-				return nil, err
-			}
-			saslClient := gosasl.NewSaslClient(host, mechanism)
-			token, err := saslClient.Start()
-			if err != nil {
-				return nil, err
-			}
-			if len(token) == 0 {
-				return nil, fmt.Errorf("Gssapi init context returned an empty token. Probably the service is empty in the configuration")
-			}
-
-			httpClient, protocol, err := getHTTPClient(configuration)
-			if err != nil {
-				return nil, err
-			}
-			httpClient.Jar = newCookieJar()
-
-			httpOptions := thrift.THttpClientOptions{
-				Client: httpClient,
-			}
-			transport, err = thrift.NewTHttpClientTransportFactoryWithOptions(fmt.Sprintf(protocol+"://%s:%d/"+configuration.HTTPPath, host, port), httpOptions).GetTransport(socket)
-			httpTransport, ok := transport.(*thrift.THttpClient)
-			if ok {
-				httpTransport.SetHeader("Authorization", "Negotiate "+base64.StdEncoding.EncodeToString(token))
-			}
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			panic("Unrecognized auth")
-		}
-	} else if configuration.TransportMode == "binary" {
-		if auth == "NOSASL" {
-			transport = thrift.NewTBufferedTransport(socket, 4096)
-			if transport == nil {
-				return nil, fmt.Errorf("BufferedTransport was nil")
-			}
-		} else if auth == "NONE" || auth == "LDAP" || auth == "CUSTOM" {
-			saslConfiguration := map[string]string{"username": configuration.Username, "password": configuration.Password}
-			transport, err = NewTSaslTransport(socket, host, "PLAIN", saslConfiguration)
-			if err != nil {
-				return
-			}
-		} else if auth == "KERBEROS" {
-			saslConfiguration := map[string]string{"service": configuration.Service}
-			transport, err = NewTSaslTransport(socket, host, "GSSAPI", saslConfiguration)
-			if err != nil {
-				return
-			}
-		} else {
-			panic("Unrecognized auth")
+	if configuration.TransportMode == "binary" {
+		saslConfiguration := map[string]string{"username": configuration.Username, "password": configuration.Password}
+		transport, err = NewTSaslTransport(socket, host, "PLAIN", saslConfiguration)
+		if err != nil {
+			return
 		}
 		if err = transport.Open(); err != nil {
 			return

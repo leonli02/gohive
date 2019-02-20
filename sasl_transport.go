@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/beltran/gosasl"
+	"github.com/leonli02/gosasl"
 	"io"
 )
 
@@ -40,17 +40,7 @@ type TSaslTransport struct {
 // NewTSaslTransport return a TSaslTransport
 func NewTSaslTransport(trans thrift.TTransport, host string, mechanismName string, configuration map[string]string) (*TSaslTransport, error) {
 	var mechanism gosasl.Mechanism
-	if mechanismName == "PLAIN" {
-		mechanism = gosasl.NewPlainMechanism(configuration["username"], configuration["password"])
-	} else if mechanismName == "GSSAPI" {
-		var err error
-		mechanism, err = gosasl.NewGSSAPIMechanism(configuration["service"])
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		panic("Mechanism not supported")
-	}
+	mechanism = gosasl.NewPlainMechanism(configuration["username"], configuration["password"])
 	client := gosasl.NewSaslClient(host, mechanism)
 
 	return &TSaslTransport{
