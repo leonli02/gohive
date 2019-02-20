@@ -23,7 +23,6 @@ type Connection struct {
 	port                int
 	username            string
 	database            string
-	auth                string
 	kerberosServiceName string
 	password            string
 	sessionHandle       *hiveserver.TSessionHandle
@@ -34,7 +33,7 @@ type Connection struct {
 
 // ConnectConfiguration is the configuration for the connection
 // The fields have to be filled manually but not all of them are required
-// Depends on the auth and kind of connection.
+// Depends on the kind of connection.
 type ConnectConfiguration struct {
 	Username             string
 	Principal            string
@@ -64,8 +63,7 @@ func NewConnectConfiguration() *ConnectConfiguration {
 }
 
 // Connect to hive server
-func Connect(host string, port int, auth string,
-	configuration *ConnectConfiguration) (conn *Connection, err error) {
+func Connect(host string, port int, configuration *ConnectConfiguration) (conn *Connection, err error) {
 
 	var socket thrift.TTransport
 	if configuration.TLSConfig != nil {
@@ -126,7 +124,6 @@ func Connect(host string, port int, auth string,
 		host:                host,
 		port:                port,
 		database:            "default",
-		auth:                auth,
 		kerberosServiceName: "",
 		sessionHandle:       response.SessionHandle,
 		client:              client,
